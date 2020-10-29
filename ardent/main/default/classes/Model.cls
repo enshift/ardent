@@ -3,7 +3,7 @@ public with sharing abstract class Model {
    * Stores all model SObjectTypes by their model names.
    */
   private static Map<String, Schema.SObjectType> sobjectTypeByModelName;
-  private static Integer globalUniqueKey;
+  private static Integer globalUniqueKey = 0;
 
   static {
     sobjectTypeByModelName = new Map<String, Schema.SObjectType>();
@@ -17,24 +17,34 @@ public with sharing abstract class Model {
   }
 
   public static Model newInstance(System.Type type) {
+    return createNewInstance(type, null);
+  }
+
+  public static Model newInstance(System.Type type, SObject sobjectInstance) {
+    return createNewInstance(type, sobjectInstance);
+  }
+
+  private static Model createNewInstance(
+    System.Type type,
+    SObject sobjectInstance
+  ) {
     Model modelInstance = (Model) Type.newInstance();
     Schema.SObjectType sobjectType = sobjectTypeByModelName.get(type.getName());
-    SObject sobjectInstance = sobjectType.newSObject();
+
+    if (sobjectInstance == null) {
+      sobjectInstance = sobjectType.newSObject();
+    }
 
     modelInstance.record = sobjectInstance;
 
     modelInstance.key = !String.isBlank(sobjectInstance.Id)
-      ? sobjectInstance.Id
+      ? String.valueOf(sobjectInstance.Id)
       : getUniqueKey();
 
     return modelInstance;
   }
 
   public static String getUniqueKey() {
-    if (globalUniqueKey == null) {
-      globalUniqueKey = 0;
-    }
-
     return String.valueOf(globalUniqueKey++);
   }
 
