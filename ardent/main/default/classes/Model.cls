@@ -3,6 +3,7 @@ public with sharing abstract class Model {
    * Stores all model SObjectTypes by their model names.
    */
   private static Map<String, Schema.SObjectType> sobjectTypeByModelName;
+  private static Integer globalUniqueKey;
 
   static {
     sobjectTypeByModelName = new Map<String, Schema.SObjectType>();
@@ -22,9 +23,21 @@ public with sharing abstract class Model {
 
     modelInstance.record = sobjectInstance;
 
+    modelInstance.key = !String.isBlank(sobjectInstance.Id)
+      ? sobjectInstance.Id
+      : getUniqueKey();
+
     return modelInstance;
   }
 
-  private String key;
-  private SObject record;
+  public static String getUniqueKey() {
+    if (globalUniqueKey == null) {
+      globalUniqueKey = 0;
+    }
+
+    return String.valueOf(globalUniqueKey++);
+  }
+
+  public String key { get; private set; }
+  public SObject record { get; private set; }
 }
