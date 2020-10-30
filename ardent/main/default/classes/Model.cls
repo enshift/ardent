@@ -5,6 +5,9 @@ public with sharing abstract class Model {
   private static Map<String, Schema.SObjectType> sobjectTypeByModelName;
   private static Integer globalUniqueKey = 0;
 
+  public String key { get; private set; }
+  public SObject record { get; private set; }
+
   static {
     sobjectTypeByModelName = new Map<String, Schema.SObjectType>();
   }
@@ -47,7 +50,4 @@ public with sharing abstract class Model {
   public static String getUniqueKey() {
     return String.valueOf(globalUniqueKey++);
   }
-
-  public String key { get; private set; }
-  public SObject record { get; private set; }
 }
