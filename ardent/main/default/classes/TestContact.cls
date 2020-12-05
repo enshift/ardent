@@ -1,5 +1,5 @@
 public with sharing class TestContact extends Model {
   static {
-    setTypes(TestContact.class, Contact.getSObjectType());
+    register(TestContact.class, Contact.getSObjectType());
   }
 }
