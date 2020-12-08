@@ -1,6 +1,28 @@
 @isTest
 private class SObjectFactoryTest {
   @isTest
+  static void shouldReceiveUniqueIdPerKeyPrefix() {
+    Account firstAccount = (Account) SObjectFactory.newInstance(
+        Schema.Account.getSObjectType()
+      )
+      .forgeSingle();
+
+    Case caseInstance = (Case) SObjectFactory.newInstance(
+        Schema.Case.getSObjectType()
+      )
+      .forgeSingle();
+
+    Account secondAccount = (Account) SObjectFactory.newInstance(
+        Schema.Account.getSObjectType()
+      )
+      .forgeSingle();
+
+    System.assertEquals(Id.valueOf('001000000000001'), firstAccount.Id);
+    System.assertEquals(Id.valueOf('500000000000001'), caseInstance.Id);
+    System.assertEquals(Id.valueOf('001000000000002'), secondAccount.Id);
+  }
+
+  @isTest
   private static void canWriteToImmutableField() {
     String caseNumber = '0000001';
 

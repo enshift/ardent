@@ -10,18 +10,17 @@ public class SObjectFactory {
 
   public static Id generateId(Schema.SObjectType sobjectType) {
     String keyPrefix = sobjectType.getDescribe().getKeyPrefix();
-    Integer idCount;
+    Integer idCount = 0;
 
-    if (!idCountByKeyPrefix.containsKey(keyPrefix)) {
-      idCount = 1;
-      idCountByKeyPrefix.put(keyPrefix, idCount);
-    } else {
+    if (idCountByKeyPrefix.containsKey(keyPrefix)) {
       idCount = idCountByKeyPrefix.get(keyPrefix);
     }
 
+    idCountByKeyPrefix.put(keyPrefix, idCount += 1);
+
     String padding = ID_PATTERN.substring(0, 12 - idCount.format().length());
 
-    return Id.valueOf(keyPrefix + padding + idCount++);
+    return Id.valueOf(keyPrefix + padding + idCount);
   }
 
   private SObjectFactory(Schema.SObjectType sobjectType) {
