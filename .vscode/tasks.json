@@ -1,0 +1,40 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "build",
+        "command": "sfdx",
+        "args": ["force:source:push"],
+        "problemMatcher": [
+          {
+            "owner": "KAB-apex",
+            "fileLocation": ["relative", "${workspaceFolder}"],
+            "pattern": {
+              "regexp": "^(.*)  (.*) \\((\\d+):(\\d+)\\)$",
+              "file": 1,
+              "line": 3,
+              "column": 4,
+              "message": 2
+            }
+          },
+          {
+            "owner": "KAB-lc",
+            "fileLocation": ["relative", "${workspaceFolder}"],
+            "pattern": {
+              "regexp": "^(.*) \\s \\w*:(\\w*:)(\\d+),(\\d+):\\s(.*)$",
+              "file": 1,
+              "line": 3,
+              "column": 4
+            }
+          }
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "presentation": {
+          "reveal": "never"
+        }
+      }
+    ]
+  }
