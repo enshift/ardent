@@ -39,31 +39,39 @@ public class SObjectFactory {
     return sobjectType;
   }
 
-  public SObjectFactory setFields(
-    Map<Schema.SObjectField, Object> fieldValues
-  ) {
+  public SObjectFactory shouldGenerateId(Boolean shouldGenerateId) {
+    this.shouldGenerateId = shouldGenerateId;
+
+    return this;
+  }
+
+  public SObjectFactory setNumberOfSObjects(Integer numberOfSObjects) {
+    this.numberOfSObjects = numberOfSObjects;
+
+    return this;
+  }
+
+  public SObjectFactory put(Map<Schema.SObjectField, Object> fieldValues) {
     for (Schema.SObjectField sobjectField : fieldValues.keySet()) {
-      setField(sobjectField, fieldValues.get(sobjectField));
+      put(sobjectField, fieldValues.get(sobjectField));
     }
 
     return this;
   }
 
-  public SObjectFactory setField(
+  public SObjectFactory put(
     Schema.SObjectField sobjectField,
     Object fieldValue
   ) {
-    return setField(sobjectField.getDescribe().getLocalName(), fieldValue);
+    return put(sobjectField.getDescribe().getLocalName(), fieldValue);
   }
 
   /**
    * Stores field values (ie: "FirstName" => "John") in a map, itself again mapped by relationship name (ie. 'Account.Contact' => Map).
    */
-  public SObjectFactory setField(String path, Object fieldValue) {
+  public SObjectFactory put(String path, Object fieldValue) {
     if (String.isBlank(path)) {
-      throw new SObjectFactoryException(
-        'You must provide a path for setField.'
-      );
+      throw new SObjectFactoryException('You must provide a path for put.');
     }
 
     String normalizedPath = normalizeRelationshipName(path);
@@ -93,28 +101,25 @@ public class SObjectFactory {
     return this;
   }
 
-  public SObjectFactory shouldGenerateId(Boolean shouldGenerateId) {
-    this.shouldGenerateId = shouldGenerateId;
-
-    return this;
-  }
-
-  public SObjectFactory setNumberOfSObjects(Integer numberOfSObjects) {
-    this.numberOfSObjects = numberOfSObjects;
-
-    return this;
-  }
-
   /**
    * Define a parent relationship path to be recursively forged for the initial SObjects.
-   * Eg: addParentRelationship('Contact.Account.Owner') will forge a parent Contact, parent Contact Account and parent Contact Account Owner.
+   * Eg: putParent('Contact.Account.Owner') will forge a parent Contact, parent Contact Account and parent Contact Account Owner.
    */
-  public SObjectFactory addParentRelationship(String parentRelationshipPath) {
+  public SObjectFactory putParent(String parentRelationshipPath) {
     String relationship = normalizeRelationshipName(parentRelationshipPath);
 
     if (!fieldValues.containsKey(relationship)) {
       fieldValues.put(relationship, null);
     }
+
+    return this;
+  }
+
+  public SObjectFactory putChildren(
+    Schema.SObjectField childLookupField,
+    SObjectFactory childFactory
+  ) {
+    childFactories.put(childLookupField, childFactory);
 
     return this;
   }
@@ -174,16 +179,6 @@ public class SObjectFactory {
     return sobjects;
   }
 
-  // TODO: rename to putChildren, rename setField to put()? Reflects the map functionality of setting and overwriting something.
-  public SObjectFactory setChildren(
-    Schema.SObjectField childLookupField,
-    SObjectFactory childFactory
-  ) {
-    childFactories.put(childLookupField, childFactory);
-
-    return this;
-  }
-
   /**
    * To avoid running forgeObject() multiple times on the same relationship trees (ie. Account & Account.Owner), we deduplicate the relationships here.
    */
@@ -226,7 +221,7 @@ public class SObjectFactory {
     return deduplicatedRelationships;
   }
 
-  private static SObject forgeSObject(
+  private SObject forgeSObject(
     Schema.SObjectType sobjectType,
     Map<String, Object> fieldValues,
     Boolean shouldGenerateId
@@ -250,7 +245,7 @@ public class SObjectFactory {
   /**
    * Used because deserializing untyped objects to SObjects have case sensitive field and relationship names.
    */
-  private static Map<String, Object> normalizeFieldValueKeys(
+  private Map<String, Object> normalizeFieldValueKeys(
     Map<String, Object> fieldValues,
     Schema.SObjectType sobjectType
   ) {
@@ -295,7 +290,7 @@ public class SObjectFactory {
    * At every relationship level, we check if the SObject was already provisioned in a previous iteration, and reuse that if applicable to allow for
    * shared parent relationship paths (eg Account.Owner and Account.Parent not overwriting each other's Accounts).
    */
-  private static SObject forgeSObjectTree(
+  private SObject forgeSObjectTree(
     SObject sobjectInstance,
     Schema.SObjectType sobjectType,
     String parentRelationshipPath,
@@ -435,7 +430,8 @@ public class SObjectFactory {
    * Example: For an Account and a collection of Contacts for example, it would result in a property 'Contacts' on the Account, with the collection of
    * Contacts, and the AccountId for each Contact being completed with the parent Account's Id.
    */
-  public static SObject addChildren(
+  @TestVisible
+  private SObject addChildren(
     SObject sobjectInstance,
     Schema.SObjectType childSObjectType,
     Schema.SObjectField parentLookup,
@@ -478,7 +474,7 @@ public class SObjectFactory {
     return sobjectInstance;
   }
 
-  public static SObject putProperty(
+  private SObject putProperty(
     SObject sobjectInstance,
     Schema.SObjectType sobjectType,
     String propertyName,
@@ -491,7 +487,7 @@ public class SObjectFactory {
     );
   }
 
-  public static SObject putProperties(
+  private SObject putProperties(
     SObject sobjectInstance,
     Schema.SObjectType sobjectType,
     Map<String, Object> properties
@@ -503,7 +499,7 @@ public class SObjectFactory {
     return updatedSObjectInstance;
   }
 
-  private static Map<String, Object> getUntypedObject(Object objectInstance) {
+  private Map<String, Object> getUntypedObject(Object objectInstance) {
     String serializedObject = JSON.serialize(objectInstance);
     Map<String, Object> untypedObject = (Map<String, Object>) JSON.deserializeUntyped(
       serializedObject
@@ -512,7 +508,7 @@ public class SObjectFactory {
     return untypedObject;
   }
 
-  private static SObject getSObject(
+  private SObject getSObject(
     Map<String, Object> untypedObject,
     Schema.SObjectType sobjectType
   ) {

@@ -40,7 +40,7 @@ private class SObjectFactoryTest {
     Case writeableCaseInstance = (Case) SObjectFactory.newInstance(
         Schema.Case.getSObjectType()
       )
-      .setField(Schema.Case.CaseNumber, caseNumber)
+      .put(Schema.Case.CaseNumber, caseNumber)
       .forgeSingle();
 
     System.assertNotEquals(caseNumber, caseInstance.CaseNumber);
@@ -48,55 +48,11 @@ private class SObjectFactoryTest {
   }
 
   @isTest
-  private static void canSetChildrenOnSObject() {
-    List<Contact> contacts = (List<Contact>) SObjectFactory.newInstance(
-        Schema.Contact.getSobjectType()
-      )
-      .shouldGenerateId(true)
-      .forge(5);
-    Account parentAccount = (Account) SObjectFactory.newInstance(
-        Schema.Account.getSObjectType()
-      )
-      .shouldGenerateId(true)
-      .forgeSingle();
-    Account parentAccountWithContacts = (Account) SObjectFactory.addChildren(
-      parentAccount,
-      Schema.Contact.getSObjectType(),
-      Contact.AccountId,
-      contacts
-    );
-
-    System.assertNotEquals(
-      null,
-      parentAccountWithContacts.Contacts,
-      'Account Contact children should be set.'
-    );
-    System.assertEquals(
-      5,
-      parentAccountWithContacts.Contacts.size(),
-      'Account should have exactly 5 Contact children.'
-    );
-
-    for (Contact childContact : parentAccountWithContacts.Contacts) {
-      System.assertEquals(
-        parentAccount.Id,
-        childContact.AccountId,
-        'Parent Lookup field on Account Contact child was not set.'
-      );
-      System.assertEquals(
-        parentAccount,
-        childContact.Account,
-        'Parent Account on Contact child was not set.'
-      );
-    }
-  }
-
-  @isTest
-  static void canAddChildren() {
+  static void canPutChildren() {
     Account account = (Account) SObjectFactory.newInstance(
         Schema.Account.getSObjectType()
       )
-      .setChildren(
+      .putChildren(
         Schema.Contact.AccountId,
         SObjectFactory.newInstance(Schema.Contact.getSObjectType())
           .setNumberOfSObjects(5)
@@ -128,7 +84,7 @@ private class SObjectFactoryTest {
     Contact contact = (Contact) SObjectFactory.newInstance(
         Schema.Contact.getSObjectType()
       )
-      .addParentRelationship('Account')
+      .putParent('Account')
       .forgeSingle();
 
     System.assertNotEquals(null, contact.Id, 'Contact Id is set');
@@ -149,7 +105,7 @@ private class SObjectFactoryTest {
     Contact contact = (Contact) SObjectFactory.newInstance(
         Schema.Contact.getSobjectType()
       )
-      .addParentRelationship('Account.Owner')
+      .putParent('Account.Owner')
       .forgeSingle();
 
     System.assertNotEquals(null, contact.Id, 'Contact Id is set');
@@ -180,8 +136,8 @@ private class SObjectFactoryTest {
     Contact contact = (Contact) SObjectFactory.newInstance(
         Schema.Contact.getSobjectType()
       )
-      .addParentRelationship('Account.Owner')
-      .addParentRelationship('ReportsTo.Owner')
+      .putParent('Account.Owner')
+      .putParent('ReportsTo.Owner')
       .forgeSingle();
 
     System.assertNotEquals(
@@ -211,7 +167,7 @@ private class SObjectFactoryTest {
     Contact contact = (Contact) SObjectFactory.newInstance(
         Schema.Contact.getSobjectType()
       )
-      .addParentRelationship('Account.Owner')
+      .putParent('Account.Owner')
       .forgeSingle();
 
     Object account = SObjectFactory.getParent(contact, 'Account');
@@ -246,8 +202,8 @@ private class SObjectFactoryTest {
     Contact contact = (Contact) SObjectFactory.newInstance(
         Schema.Contact.getSobjectType()
       )
-      .addParentRelationship('Account.Owner')
-      .addParentRelationship('Account.Parent')
+      .putParent('Account.Owner')
+      .putParent('Account.Parent')
       .forgeSingle();
 
     System.assertNotEquals(
@@ -304,11 +260,11 @@ private class SObjectFactoryTest {
     Contact contact = (Contact) SObjectFactory.newInstance(
         Schema.Contact.getSobjectType()
       )
-      .setField('Email', 'email@address.dev')
-      .setField('Account.Name', 'Child Account')
-      .setField('Account.Parent.Name', 'Parent Account')
-      .setField('Account.Owner.Name', 'The Owner')
-      .setField('ReportsTo.FirstName', 'ReportsToContact')
+      .put('Email', 'email@address.dev')
+      .put('Account.Name', 'Child Account')
+      .put('Account.Parent.Name', 'Parent Account')
+      .put('Account.Owner.Name', 'The Owner')
+      .put('ReportsTo.FirstName', 'ReportsToContact')
       .forgeSingle();
 
     System.assertEquals('email@address.dev', contact.Email);
@@ -319,13 +275,13 @@ private class SObjectFactoryTest {
   }
 
   @isTest
-  private static void canSetAddParentRelationshipAndSetField() {
+  private static void canSetPutParentAndput() {
     Contact contact = (Contact) SObjectFactory.newInstance(
         Schema.Contact.getSobjectType()
       )
-      .addParentRelationship('Account.Owner')
-      .setField('Account.Name', 'My Account Name')
-      .setField('Account.Owner.Email', 'email@address.dev')
+      .putParent('Account.Owner')
+      .put('Account.Name', 'My Account Name')
+      .put('Account.Owner.Email', 'email@address.dev')
       .forgeSingle();
 
     System.assertEquals(
@@ -341,13 +297,13 @@ private class SObjectFactoryTest {
   }
 
   @isTest
-  private static void isSetFieldCaseInsensitive() {
+  private static void isPutCaseInsensitive() {
     Contact contact = (Contact) SObjectFactory.newInstance(
         Schema.Contact.getSobjectType()
       )
-      .addParentRelationship('account.Owner')
-      .setField('Account.name', 'My Account Name')
-      .setField('AccounT.Owner.eMaIl', 'email@address.dev')
+      .putParent('account.Owner')
+      .put('Account.name', 'My Account Name')
+      .put('AccounT.Owner.eMaIl', 'email@address.dev')
       .forgeSingle();
 
     System.assertEquals(
