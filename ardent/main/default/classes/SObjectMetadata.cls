@@ -87,6 +87,18 @@ public class SObjectMetadata {
     Schema.SObjectType childSObjectType,
     Schema.SObjectField parentLookup
   ) {
+    return getChildRelationship(
+      sobjectType,
+      childSObjectType,
+      parentLookup.getDescribe().getName()
+    );
+  }
+
+  public static Schema.ChildRelationship getChildRelationship(
+    Schema.SObjectType sobjectType,
+    Schema.SObjectType childSObjectType,
+    String parentLookup
+  ) {
     Schema.ChildRelationship matchingChildRelationship;
 
     for (
@@ -95,7 +107,7 @@ public class SObjectMetadata {
     ) {
       if (
         childSObjectType == childRelationship.getChildSObject() &&
-        parentLookup == childRelationship.getField()
+        parentLookup == childRelationship.getField().getDescribe().getName()
       ) {
         matchingChildRelationship = childRelationship;
 
@@ -109,7 +121,7 @@ public class SObjectMetadata {
           EXCEPTION_UKNOWN_RELATIONSHIP_FIELD,
           new List<String>{
             childSObjectType.getDescribe().getName(),
-            parentLookup.getDescribe().getName(),
+            parentLookup,
             sobjectType.getDescribe().getName()
           }
         )

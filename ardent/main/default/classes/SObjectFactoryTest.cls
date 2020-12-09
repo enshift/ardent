@@ -92,6 +92,38 @@ private class SObjectFactoryTest {
   }
 
   @isTest
+  static void canAddChildren() {
+    Account account = (Account) SObjectFactory.newInstance(
+        Schema.Account.getSObjectType()
+      )
+      .setChildren(
+        Schema.Contact.AccountId,
+        SObjectFactory.newInstance(Schema.Contact.getSObjectType())
+          .setNumberOfSObjects(5)
+      )
+      .forgeSingle();
+
+    System.assertNotEquals(
+      null,
+      account.Contacts,
+      'Account Contact children should be set.'
+    );
+    System.assertEquals(
+      5,
+      account.Contacts.size(),
+      'Account should have exactly 5 Contact children.'
+    );
+
+    for (Contact childContact : account.Contacts) {
+      System.assertEquals(
+        account.Id,
+        childContact.AccountId,
+        'Parent Lookup field on Account Contact child was not set.'
+      );
+    }
+  }
+
+  @isTest
   private static void canAddDirectParentRelationship() {
     Contact contact = (Contact) SObjectFactory.newInstance(
         Schema.Contact.getSObjectType()

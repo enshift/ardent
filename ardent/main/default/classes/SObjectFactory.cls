@@ -4,7 +4,7 @@ public class SObjectFactory {
   private static Map<String, Integer> idCountByKeyPrefix = new Map<String, Integer>();
   private Schema.SObjectType sobjectType;
   private Map<String, Map<String, Object>> fieldValues;
-  List<String> parentRelationships;
+  private Map<Schema.SObjectField, SObjectFactory> childFactories;
   private Integer numberOfSObjects;
   private Boolean shouldGenerateId;
 
@@ -28,7 +28,7 @@ public class SObjectFactory {
     this.numberOfSObjects = 1;
     this.shouldGenerateId = true;
     this.fieldValues = new Map<String, Map<String, Object>>();
-    this.parentRelationships = new List<String>();
+    this.childFactories = new Map<Schema.SObjectField, SObjectFactory>();
   }
 
   public static SObjectFactory newInstance(Schema.SObjectType sobjectType) {
@@ -99,6 +99,12 @@ public class SObjectFactory {
     return this;
   }
 
+  public SObjectFactory setNumberOfSObjects(Integer numberOfSObjects) {
+    this.numberOfSObjects = numberOfSObjects;
+
+    return this;
+  }
+
   /**
    * Define a parent relationship path to be recursively forged for the initial SObjects.
    * Eg: addParentRelationship('Contact.Account.Owner') will forge a parent Contact, parent Contact Account and parent Contact Account Owner.
@@ -114,12 +120,16 @@ public class SObjectFactory {
   }
 
   public SObject forgeSingle() {
-    return forge(1).get(0);
+    return forge().get(0);
   }
 
   public List<SObject> forge(Integer numberOfSObjects) {
     this.numberOfSObjects = numberOfSObjects;
 
+    return forge();
+  }
+
+  public List<SObject> forge() {
     Set<String> relationships = fieldValues.keySet().clone();
     // Remove the base fields stored with an empty relationship name as the key, is technically not a relationship.;
     relationships.remove('');
@@ -146,10 +156,32 @@ public class SObjectFactory {
         );
       }
 
+      for (Schema.SObjectField childLookupField : childFactories.keySet()) {
+        SObjectFactory childFactory = childFactories.get(childLookupField);
+        List<SObject> childSObjects = childFactory.forge();
+
+        sobjectInstance = addChildren(
+          sobjectInstance,
+          childFactory.getSObjectType(),
+          childLookupField,
+          childSObjects
+        );
+      }
+
       sobjects.add(sobjectInstance);
     }
 
     return sobjects;
+  }
+
+  // TODO: rename to putChildren, rename setField to put()? Reflects the map functionality of setting and overwriting something.
+  public SObjectFactory setChildren(
+    Schema.SObjectField childLookupField,
+    SObjectFactory childFactory
+  ) {
+    childFactories.put(childLookupField, childFactory);
+
+    return this;
   }
 
   /**
@@ -444,6 +476,19 @@ public class SObjectFactory {
     sobjectInstance = getSObject(untypedSObject, sobjectType);
 
     return sobjectInstance;
+  }
+
+  public static SObject putProperty(
+    SObject sobjectInstance,
+    Schema.SObjectType sobjectType,
+    String propertyName,
+    Object property
+  ) {
+    return putProperties(
+      sobjectInstance,
+      sobjectType,
+      new Map<String, Object>{ propertyName => property }
+    );
   }
 
   public static SObject putProperties(
